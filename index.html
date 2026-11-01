@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mi posición</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.31/"></script>
+  <style>
+    html, body, #view { height: 100%; margin: 0; padding: 0; }
+    #btn {
+      position: absolute; right: 12px; bottom: 28px; z-index: 10;
+      width: 52px; height: 52px; border-radius: 50%; border: none;
+      background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35);
+      font-size: 24px;
+    }
+    #info {
+      position: absolute; left: 12px; bottom: 28px; z-index: 10;
+      background: rgba(255,255,255,.92); padding: 6px 10px; border-radius: 8px;
+      font: 12px sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+  </style>
+</head>
+<body>
+  <div id="view"></div>
+  <div id="info">Buscando ubicación…</div>
+  <button id="btn" aria-label="Centrar en mi posición">📍</button>
+
+  <script>
+    require([
+      "esri/config", "esri/Map", "esri/views/MapView", "esri/Graphic",
+      "esri/layers/GraphicsLayer"
+    ], function (esriConfig, Map, MapView, Graphic, GraphicsLayer) {
+
+      // Opcional: pega aquí tu API key de ArcGIS si tu basemap lo requiere
+      // esriConfig.apiKey = "TU_API_KEY";
+
+      const capa = new GraphicsLayer();
+      const map = new Map({ basemap: "streets-navigation-vector", layers: [capa] });
+      const view = new MapView({
+        container: "view",
+        map: map,
+        center: [-79.9, -2.17], // Guayaquil
+        zoom: 12,
+        ui: { components: ["zoom"] }
+      });
+
+      const info = document.getElementById("info");
+      let primera = true, ultimo = null;
+
+      function dibujar(lon, lat, precision) {
+        const punto = { type: "point", longitude: lon, latitude: lat };
+        capa.removeAll();
+        capa.add(new Graphic({
+          geometry: { type: "circle", center: punto, radius: precision, radiusUnit: "meters" },
+          symbol: { type: "simple-fill", color: [0, 120, 255, 0.12],
+                    outline: { color: [0, 120, 255, 0.5], width: 1 } }
+        }));
+        capa.add(new Graphic({
+          geometry: punto,
+          symbol: { type: "simple-marker", color: [0, 120, 255], size: 14,
+                    outline: { color: "white", width: 2 } }
+        }));
+        ultimo = punto;
+        info.textContent = lat.toFixed(5) + ", " + lon.toFixed(5) + "  (±" + Math.round(precision) + " m)";
+        if (primera) { view.goTo({ target: punto, zoom: 17 }); primera = false; }
+      }
+
+      if (!navigator.geolocation) {
+        info.textContent = "Geolocalización no disponible";
+      } else {
+        navigator.geolocation.watchPosition(
+          p => dibujar(p.coords.longitude, p.coords.latitude, p.coords.accuracy),
+          e => { info.textContent = "Error de ubicación: " + e.message; },
+          { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
+        );
+      }
+
+      document.getElementById("btn").onclick = () => {
+        if (ultimo) view.goTo({ target: ultimo, zoom: 17 });
+      };
+    });
+  </script>
+</body>
+</html>
