@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,6 +33,11 @@ jobs:
         run: |
           sed -i 's#<application#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application#' android/app/src/main/AndroidManifest.xml
 
+      - name: Firma fija (permite actualizar sobre la versión anterior)
+        run: |
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/debug.keystore
+
       - name: Sincronizar
         run: npx cap sync android
 
@@ -37,7 +45,10 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mi-posicion-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Publicar en Releases (enlace fijo de descarga)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk app.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest app.apk --title "Última versión" --notes "APK generado automáticamente del commit ${GITHUB_SHA::7}"
