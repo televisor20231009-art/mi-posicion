@@ -3,147 +3,278 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SAM POCKET</title>
+  <title>SAM Pocket</title>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css">
-  <!-- Bootstrap JS debe cargarse ANTES que Esri: el loader AMD de Esri (define.amd) rompe su registro global -->
+  <!-- Bootstrap JS va ANTES que Esri (conflicto con el loader AMD) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://js.arcgis.com/4.31/"></script>
 
   <style>
+    :root { --navy: #1c2f3e; --blue: #2389cc; }
     html, body { height: 100%; margin: 0; }
-    body { display: flex; flex-direction: column; }
-    .navbar { padding-top: calc(env(safe-area-inset-top, 0px) + .25rem); flex: 0 0 auto; }
+    body { display: flex; flex-direction: column; background: var(--navy); }
+    .navbar { background: var(--navy); padding-top: calc(env(safe-area-inset-top, 0px) + .3rem); flex: 0 0 auto; }
+    .navbar small { color: #9fb6c8; font-size: .68rem; display: block; margin-top: -3px; }
     #view { flex: 1 1 auto; min-height: 0; }
-    #info {
-      position: absolute; left: 12px; bottom: 28px; z-index: 10;
-      background: rgba(255,255,255,.92); padding: 6px 10px; border-radius: 8px;
-      font: 12px sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.25);
-    }
-    #btn-gps {
-      position: absolute; right: 12px; bottom: 28px; z-index: 10;
-      width: 52px; height: 52px; border-radius: 50%; border: none;
-      background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35); font-size: 24px;
-    }
+    #panel { flex: 0 0 auto; background: var(--navy); color: #fff;
+             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + .4rem); }
+    #cap { padding: .6rem .9rem .2rem; min-height: 5.6rem; }
+    #cap h6 { margin: 0 0 .15rem; font-weight: 700; }
+    #cap p { margin: 0; font-size: .82rem; color: #d3e0ea; }
+    #cap .sdk { display: inline-block; margin-top: .35rem; font: 11px/1 monospace; color: #7fd0ff;
+                background: rgba(35,137,204,.18); padding: 3px 7px; border-radius: 10px; }
+    #ext { font-size: .75rem; color: #ffd27a; margin-top: .25rem; }
+    #chips { display: flex; gap: .5rem; overflow-x: auto; padding: .45rem .75rem; scrollbar-width: none; }
+    #chips::-webkit-scrollbar { display: none; }
+    .chip { white-space: nowrap; border-radius: 20px; border: 1px solid #5b7a92; color: #fff;
+            background: transparent; padding: .35rem .8rem; font-size: .85rem; }
+    .chip.active { background: var(--blue); border-color: var(--blue); }
+    .esri-popup__main-container { max-width: 85vw; }
   </style>
 </head>
 <body>
 
-  <nav class="navbar navbar-dark bg-dark px-2">
-    <span class="navbar-brand fw-bold mb-0">🛰️ SAM POCKET</span>
-
-    <ul class="navbar-nav flex-row ms-auto gap-2">
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="ciudadActual" role="button"
-           data-bs-toggle="dropdown" aria-expanded="false">Guayaquil</a>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item active" href="#" data-ciudad="guayaquil">Guayaquil</a></li>
-          <li><a class="dropdown-item" href="#" data-ciudad="quito">Quito</a></li>
-          <li><a class="dropdown-item" href="#" data-ciudad="cuenca">Cuenca</a></li>
-        </ul>
-      </li>
-    </ul>
+  <nav class="navbar navbar-dark px-3">
+    <div>
+      <span class="navbar-brand fw-bold mb-0">🛰️ SAM Pocket</span>
+      <small>Demo · ArcGIS Maps SDK for JavaScript</small>
+    </div>
+    <button class="btn btn-sm btn-outline-light rounded-pill" data-bs-toggle="offcanvas" data-bs-target="#acerca">¿Por qué?</button>
   </nav>
 
   <div id="view"></div>
-  <div id="info">Buscando ubicación…</div>
-  <button id="btn-gps" aria-label="Ir a mi posición">📍</button>
+
+  <div id="panel">
+    <div id="cap"></div>
+    <div id="chips"></div>
+  </div>
+
+  <div class="offcanvas offcanvas-bottom" id="acerca" tabindex="-1" style="height:78vh">
+    <div class="offcanvas-header" style="background:var(--navy);color:#fff">
+      <h5 class="offcanvas-title">Mapas inteligentes en tu bolsillo</h5>
+      <button class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+      <p>Este demo corre sobre el <b>ArcGIS Maps SDK for JavaScript</b> y se empaqueta como app Android. Todo lo que ves son ejemplos reales del SDK con datos públicos.</p>
+      <ul class="list-unstyled">
+        <li class="mb-2">🧩 <b>Un solo código</b>: lo que se hace para la web se reutiliza en el teléfono.</li>
+        <li class="mb-2">📡 <b>Sensores del dispositivo</b>: GPS, precisión y seguimiento en tiempo real.</li>
+        <li class="mb-2">⚡ <b>Análisis en el equipo</b>: medir, calcular radios y áreas sin depender de un servidor.</li>
+        <li class="mb-2">🔌 <b>Conecta lo que ya existe</b>: GeoJSON, servicios ArcGIS y APIs propias o abiertas.</li>
+        <li class="mb-2">🎨 <b>Visualización a la medida</b>: símbolos, mapas de calor, etiquetas y ventanas emergentes.</li>
+        <li class="mb-2">🚀 <b>Actualizaciones ágiles</b>: cada cambio en el código genera un APK nuevo en minutos.</li>
+      </ul>
+      <p class="text-muted small mb-0">Demo de concepto. Sismos: USGS · Clima: Open-Meteo · Lugares con ubicación referencial.</p>
+    </div>
+  </div>
 
   <script>
-    // Diagnóstico: muestra errores de carga en la cajita inferior
-    function mostrarError(m) {
-      const i = document.getElementById("info");
-      if (i) i.textContent = "⚠ " + m;
-    }
+    const ext = () => document.getElementById("ext");
+    function mostrarError(m) { if (ext()) ext().textContent = "⚠ " + m; }
     window.addEventListener("error", e => mostrarError(e.message));
     window.addEventListener("unhandledrejection", e => mostrarError((e.reason && e.reason.message) || e.reason));
 
+    const DEMOS = [
+      { id: "gps",    i: "📍", l: "Mi posición", t: "Geolocalización en tiempo real", s: "Geolocation · Graphic",
+        d: "Punto y círculo de precisión con el GPS del teléfono. Vuelve a tocar para centrar." },
+      { id: "sismos", i: "🌋", l: "Sismos", t: "Datos en vivo", s: "GeoJSONLayer · visual variables",
+        d: "Sismos M2.5+ de la última semana. Tamaño y color según magnitud; toca un punto para ver el detalle." },
+      { id: "calor",  i: "🔥", l: "Calor", t: "Mapa de calor", s: "HeatmapRenderer",
+        d: "Los mismos datos con otra lectura: densidad de actividad sísmica." },
+      { id: "clima",  i: "🌤️", l: "Clima", t: "Toca cualquier punto del mapa", s: "click · Popup · Open-Meteo",
+        d: "Consulta el clima actual del lugar tocado usando una API externa." },
+      { id: "medir",  i: "📏", l: "Medir", t: "Medición de distancias", s: "DistanceMeasurement2D",
+        d: "Toca el mapa para trazar una ruta y ver la distancia al instante." },
+      { id: "radio",  i: "⭕", l: "Radio", t: "Análisis espacial en el teléfono", s: "geometryEngine · geodesicBuffer",
+        d: "Toca un punto: se calcula un radio de cobertura y su área, sin servidor." },
+      { id: "tour",   i: "🧭", l: "Recorrido", t: "Recorrido por Guayaquil", s: "view.goTo · GraphicsLayer",
+        d: "Vuelo animado entre lugares de interés, con ventanas emergentes." }
+    ];
+
+    const LUGARES = [
+      { n: "Malecón 2000",           d: "Paseo a orillas del río Guayas.",                    x: -79.8797, y: -2.1932 },
+      { n: "Las Peñas y Cerro Santa Ana", d: "Barrio histórico con escalinata y vista a la ciudad.", x: -79.8760, y: -2.1860 },
+      { n: "Parque Seminario",       d: "El Parque de las Iguanas, en el centro histórico.",  x: -79.8826, y: -2.1946 },
+      { n: "Isla Santay",            d: "Humedal frente a la ciudad, ideal para naturaleza.", x: -79.8610, y: -2.2230 },
+      { n: "Aeropuerto José Joaquín de Olmedo", d: "La puerta aérea de Guayaquil.",           x: -79.8837, y: -2.1574 }
+    ];
+
+    const chipsEl = document.getElementById("chips"), capEl = document.getElementById("cap");
+    capEl.innerHTML = '<h6>Elige una demo 👇</h6><p>Cada botón muestra algo distinto que se puede hacer con el SDK. Arriba a la derecha puedes cambiar el mapa base.</p><div id="ext"></div>';
+    DEMOS.forEach(d => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.dataset.id = d.id; b.textContent = d.i + " " + d.l;
+      chipsEl.appendChild(b);
+    });
+
     if (typeof require === "undefined") {
       mostrarError("No cargó el SDK de Esri (revisa internet)");
-    }
+    } else {
+      require([
+        "esri/Map", "esri/views/MapView", "esri/Graphic", "esri/geometry/Point",
+        "esri/layers/GraphicsLayer", "esri/layers/GeoJSONLayer",
+        "esri/widgets/BasemapGallery", "esri/widgets/Expand",
+        "esri/widgets/DistanceMeasurement2D", "esri/geometry/geometryEngine", "esri/geometry/Circle"
+      ], function (Map, MapView, Graphic, Point, GraphicsLayer, GeoJSONLayer,
+                   BasemapGallery, Expand, DistanceMeasurement2D, geometryEngine, Circle) {
 
-    require([
-      "esri/config", "esri/Map", "esri/views/MapView", "esri/Graphic",
-      "esri/layers/GraphicsLayer", "esri/widgets/BasemapGallery", "esri/widgets/Expand"
-    ], function (esriConfig, Map, MapView, Graphic, GraphicsLayer, BasemapGallery, Expand) {
+        // ---------- Capas ----------
+        const PUNTOS = {
+          type: "simple",
+          symbol: { type: "simple-marker", color: [255, 140, 0, 0.75], size: 8,
+                    outline: { color: [255, 255, 255, 0.8], width: 0.6 } },
+          visualVariables: [
+            { type: "size", field: "mag", stops: [
+              { value: 2.5, size: 5 }, { value: 4.5, size: 12 }, { value: 6, size: 26 }, { value: 7.5, size: 44 }] },
+            { type: "color", field: "mag", stops: [
+              { value: 2.5, color: [255, 230, 80] }, { value: 4.5, color: [255, 140, 0] },
+              { value: 6, color: [230, 30, 30] }, { value: 7.5, color: [120, 0, 60] }] }
+          ]
+        };
+        const CALOR = {
+          type: "heatmap", field: "mag", blurRadius: 12,
+          colorStops: [
+            { ratio: 0,   color: "rgba(255,255,255,0)" }, { ratio: 0.2, color: "rgba(255,230,120,0.9)" },
+            { ratio: 0.5, color: "rgba(255,140,0,1)" },   { ratio: 0.8, color: "rgba(230,40,20,1)" },
+            { ratio: 1,   color: "rgba(130,0,50,1)" }
+          ]
+        };
 
-      // Opcional: pega aquí tu API key de ArcGIS si algún basemap lo requiere
-      // esriConfig.apiKey = "TU_API_KEY";
+        const sismosLayer = new GeoJSONLayer({
+          url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson",
+          title: "Sismos USGS", visible: false, renderer: PUNTOS, outFields: ["*"],
+          popupTemplate: { title: "Magnitud {mag}", content: "{place}<br><small>Fuente: USGS</small>" }
+        });
 
-      const CIUDADES = {
-        guayaquil: { nombre: "Guayaquil", centro: [-79.9000, -2.1700] },
-        quito:     { nombre: "Quito",     centro: [-78.5249, -0.2299] },
-        cuenca:    { nombre: "Cuenca",    centro: [-79.0059, -2.9001] }
-      };
+        const lugares = new GraphicsLayer({ visible: false });
+        LUGARES.forEach(l => lugares.add(new Graphic({
+          geometry: { type: "point", longitude: l.x, latitude: l.y },
+          symbol: { type: "simple-marker", color: [35, 137, 204], size: 13, outline: { color: "white", width: 2 } },
+          attributes: { n: l.n, d: l.d },
+          popupTemplate: { title: "{n}", content: "{d}" }
+        })));
 
-      const capa = new GraphicsLayer();
-      const map = new Map({ basemap: "streets-navigation-vector", layers: [capa] });
-      const view = new MapView({
-        container: "view",
-        map: map,
-        center: CIUDADES.guayaquil.centro,
-        zoom: 12,
-        ui: { components: ["zoom"] }
-      });
+        const buf = new GraphicsLayer(), gps = new GraphicsLayer();
+        const map = new Map({ basemap: "streets-navigation-vector", layers: [sismosLayer, lugares, buf, gps] });
+        const view = new MapView({
+          container: "view", map: map, center: [-79.89, -2.17], zoom: 12, ui: { components: ["zoom"] }
+        });
 
-      // Galería de mapas base dentro de un Expand (botón desplegable)
-      const galeria = new BasemapGallery({ view: view });
-      view.ui.add(new Expand({
-        view: view,
-        content: galeria,
-        expandIcon: "basemap",
-        group: "top-right"
-      }), "top-right");
+        view.ui.add(new Expand({
+          view: view, content: new BasemapGallery({ view: view }), expandIcon: "basemap", group: "top-right"
+        }), "top-right");
 
-      // Menú de ciudades (Bootstrap)
-      const etiqueta = document.getElementById("ciudadActual");
-      document.querySelectorAll("[data-ciudad]").forEach(function (item) {
-        item.addEventListener("click", function (ev) {
-          ev.preventDefault();
-          const c = CIUDADES[item.dataset.ciudad];
-          document.querySelectorAll("[data-ciudad]").forEach(i => i.classList.remove("active"));
-          item.classList.add("active");
-          etiqueta.textContent = c.nombre;
-          view.goTo({ center: c.centro, zoom: 12 }, { duration: 1200 });
+        // ---------- GPS ----------
+        let ultimo = null;
+        function dibujarGps(lon, lat, prec) {
+          const p = { type: "point", longitude: lon, latitude: lat };
+          gps.removeAll();
+          gps.add(new Graphic({ geometry: new Circle({ center: [lon, lat], radius: prec, radiusUnit: "meters" }),
+            symbol: { type: "simple-fill", color: [0, 120, 255, 0.12], outline: { color: [0, 120, 255, 0.5], width: 1 } } }));
+          gps.add(new Graphic({ geometry: p,
+            symbol: { type: "simple-marker", color: [0, 120, 255], size: 14, outline: { color: "white", width: 2 } } }));
+          ultimo = p;
+        }
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(
+            q => dibujarGps(q.coords.longitude, q.coords.latitude, q.coords.accuracy),
+            e => mostrarError("Ubicación: " + e.message),
+            { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+        }
+
+        // ---------- Modos ----------
+        let modo = null, meas = null, tourId = 0, radioM = 500, ultimoClic = null;
+
+        function limpiar() {
+          tourId++; view.closePopup();
+          sismosLayer.visible = false; lugares.visible = false; buf.removeAll(); ultimoClic = null;
+          if (meas) { view.ui.remove(meas); meas.destroy(); meas = null; }
+        }
+
+        function setModo(id) {
+          limpiar(); modo = id;
+          const d = DEMOS.find(x => x.id === id);
+          document.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c.dataset.id === id));
+          capEl.innerHTML = "<h6>" + d.i + " " + d.t + "</h6><p>" + d.d + "</p>" +
+            (id === "radio"
+              ? '<input id="rng" type="range" class="form-range" min="100" max="2000" step="100" value="' + radioM +
+                '"><span id="rv">' + radioM + ' m</span> · <span id="res">toca el mapa</span>' : "") +
+            '<span class="sdk">' + d.s + '</span><div id="ext"></div>';
+
+          if (id === "gps") {
+            if (ultimo) view.goTo({ target: ultimo, zoom: 17 }); else ext().textContent = "Buscando señal GPS…";
+          } else if (id === "sismos" || id === "calor") {
+            sismosLayer.renderer = id === "sismos" ? PUNTOS : CALOR;
+            sismosLayer.visible = true;
+            view.goTo({ center: [-78, -2], zoom: 3 });
+            sismosLayer.queryFeatureCount().then(n => {
+              if (ext()) ext().textContent = n + " sismos M2.5+ en los últimos 7 días · USGS";
+            });
+          } else if (id === "medir") {
+            meas = new DistanceMeasurement2D({ view: view });
+            view.ui.add(meas, "top-left"); meas.viewModel.start();
+          } else if (id === "radio") {
+            const r = document.getElementById("rng");
+            r.oninput = () => { radioM = +r.value; document.getElementById("rv").textContent = radioM + " m"; if (ultimoClic) radio(ultimoClic); };
+          } else if (id === "tour") {
+            lugares.visible = true; recorrido();
+          }
+        }
+
+        function emoji(c) {
+          return c === 0 ? "☀️" : c <= 3 ? "⛅" : c <= 48 ? "🌫️" : c <= 67 ? "🌧️" : c <= 77 ? "❄️" : c <= 82 ? "🌦️" : "⛈️";
+        }
+
+        async function clima(p) {
+          view.openPopup({ location: p, title: "Clima aquí", content: "Consultando…" });
+          try {
+            const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=" + p.latitude.toFixed(3) +
+              "&longitude=" + p.longitude.toFixed(3) +
+              "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code");
+            const c = (await r.json()).current;
+            view.openPopup({ location: p, title: "Clima aquí",
+              content: '<div style="font-size:2rem">' + emoji(c.weather_code) + " <b>" + c.temperature_2m +
+              "°C</b></div>Humedad " + c.relative_humidity_2m + "% · Viento " + c.wind_speed_10m +
+              " km/h<br><small>Fuente: Open-Meteo</small>" });
+          } catch (e) { view.openPopup({ location: p, title: "Clima aquí", content: "No se pudo consultar el clima." }); }
+        }
+
+        function radio(p) {
+          ultimoClic = p; buf.removeAll();
+          const poly = geometryEngine.geodesicBuffer(p, radioM, "meters");
+          buf.add(new Graphic({ geometry: poly,
+            symbol: { type: "simple-fill", color: [35, 137, 204, 0.25], outline: { color: [35, 137, 204], width: 2 } } }));
+          buf.add(new Graphic({ geometry: p,
+            symbol: { type: "simple-marker", color: [35, 137, 204], size: 9, outline: { color: "white", width: 2 } } }));
+          const km2 = geometryEngine.geodesicArea(poly, "square-kilometers");
+          const res = document.getElementById("res");
+          if (res) res.textContent = "área ≈ " + km2.toFixed(2) + " km²";
+        }
+
+        async function recorrido() {
+          const mi = ++tourId;
+          for (const l of LUGARES) {
+            if (mi !== tourId) return;
+            await view.goTo({ center: [l.x, l.y], zoom: 15 }, { duration: 2200 }).catch(() => {});
+            if (mi !== tourId) return;
+            view.openPopup({ title: l.n, content: l.d, location: new Point({ longitude: l.x, latitude: l.y }) });
+            await new Promise(r => setTimeout(r, 2600));
+          }
+          if (mi === tourId) { view.closePopup(); view.goTo({ center: [-79.89, -2.17], zoom: 12 }); }
+        }
+
+        view.on("click", e => {
+          if (modo === "clima") clima(e.mapPoint);
+          else if (modo === "radio") radio(e.mapPoint);
+        });
+        chipsEl.addEventListener("click", e => {
+          const b = e.target.closest(".chip");
+          if (b) setModo(b.dataset.id);
         });
       });
-
-      // Posición del usuario
-      const info = document.getElementById("info");
-      let ultimo = null;
-
-      function dibujar(lon, lat, precision) {
-        const punto = { type: "point", longitude: lon, latitude: lat };
-        capa.removeAll();
-        capa.add(new Graphic({
-          geometry: { type: "circle", center: punto, radius: precision, radiusUnit: "meters" },
-          symbol: { type: "simple-fill", color: [0, 120, 255, 0.12],
-                    outline: { color: [0, 120, 255, 0.5], width: 1 } }
-        }));
-        capa.add(new Graphic({
-          geometry: punto,
-          symbol: { type: "simple-marker", color: [0, 120, 255], size: 14,
-                    outline: { color: "white", width: 2 } }
-        }));
-        ultimo = punto;
-        info.textContent = lat.toFixed(5) + ", " + lon.toFixed(5) + "  (±" + Math.round(precision) + " m)";
-      }
-
-      if (!navigator.geolocation) {
-        info.textContent = "Geolocalización no disponible";
-      } else {
-        navigator.geolocation.watchPosition(
-          p => dibujar(p.coords.longitude, p.coords.latitude, p.coords.accuracy),
-          e => { info.textContent = "Error de ubicación: " + e.message; },
-          { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 }
-        );
-      }
-
-      document.getElementById("btn-gps").onclick = function () {
-        if (ultimo) view.goTo({ target: ultimo, zoom: 17 });
-      };
-    });
+    }
   </script>
 </body>
 </html>
